@@ -46,6 +46,12 @@ body {
   gap: 8px;
 }
 
+.profile-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .spotify-row {
   display: flex;
   justify-content: space-between;
@@ -64,6 +70,10 @@ body {
 @media (max-width: 960px) {
   .chart-shell {
     height: 240px;
+  }
+
+  .profile-summary {
+    gap: 6px;
   }
 
   .countdown-value {

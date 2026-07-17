@@ -43,6 +43,7 @@ const isDarkMode = computed({
 
 const spotifyApi = new SpotifyWebApi()
 const spotifyReady = ref(false)
+const profileExpanded = ref(false)
 const songTitle = ref('')
 const songArtist = ref('')
 const songAddedBy = ref('Amanda')
@@ -64,7 +65,7 @@ const attendanceData = computed(() => ({
     {
       label: 'Guests',
       data: [confirmedCount.value, maybeCount.value, declinedCount.value],
-      backgroundColor: ['#43a047', '#fb8c00', '#e53935'],
+      backgroundColor: ['#2e7d32', '#66bb6a', '#a5d6a7'],
       borderRadius: 8,
     },
   ],
@@ -200,11 +201,10 @@ onUnmounted(() => {
       <v-col cols="12" md="5">
         <v-card elevation="2" class="h-100">
           <v-card-title class="d-flex align-center justify-space-between">
-            <span>Countdown ⏳</span>
+            <span>⏳ Countdown</span>
             <v-chip size="small" color="primary" variant="tonal">Party Night</v-chip>
           </v-card-title>
           <v-card-text>
-            <p class="text-subtitle-1 mb-3">Months/weeks/days until the event</p>
             <div class="countdown-grid">
               <div>
                 <p class="countdown-value">{{ countdown.months }}</p>
@@ -226,45 +226,83 @@ onUnmounted(() => {
       <v-col cols="12" md="7">
         <v-card elevation="2" class="h-100">
           <v-card-title class="d-flex align-center justify-space-between">
-            <span>Profile & Settings 👤</span>
-            <v-switch
-              v-model="isDarkMode"
-              hide-details
-              color="primary"
-              inset
-              label="Dark mode"
-            />
+            <div class="d-flex align-center ga-3">
+              <v-avatar color="secondary" size="44">
+                <v-icon icon="mdi-account" />
+              </v-avatar>
+              <div>
+                <p class="text-h6 mb-0">Host Profile</p>
+                <p class="spotify-muted">Profile and preferences</p>
+              </div>
+            </div>
+            <div class="d-flex align-center ga-3">
+              <v-btn
+                variant="tonal"
+                prepend-icon="mdi-cog"
+                color="secondary"
+                @click="profileExpanded = !profileExpanded"
+              >
+                Settings
+              </v-btn>
+              <v-switch
+                v-model="isDarkMode"
+                hide-details
+                color="primary"
+                inset
+                label="Dark mode"
+              />
+            </div>
           </v-card-title>
           <v-card-text>
-            <v-row>
-              <v-col cols="12" sm="6">
-                <v-text-field
-                  v-model="profile.displayName"
-                  label="Display name"
-                  prepend-inner-icon="mdi-account"
-                  variant="outlined"
-                  density="comfortable"
-                />
-              </v-col>
-              <v-col cols="12" sm="6">
-                <v-text-field
-                  v-model="profile.phone"
-                  label="Phone"
-                  prepend-inner-icon="mdi-phone"
-                  variant="outlined"
-                  density="comfortable"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="profile.dietaryPreference"
-                  label="Food preferences"
-                  prepend-inner-icon="mdi-silverware-fork-knife"
-                  variant="outlined"
-                  density="comfortable"
-                />
-              </v-col>
-            </v-row>
+            <div class="profile-summary mb-3">
+              <v-chip size="small" variant="outlined" prepend-icon="mdi-account">
+                {{ profile.displayName }}
+              </v-chip>
+              <v-chip size="small" variant="outlined" prepend-icon="mdi-phone">
+                {{ profile.phone }}
+              </v-chip>
+              <v-chip
+                size="small"
+                variant="outlined"
+                prepend-icon="mdi-silverware-fork-knife"
+              >
+                {{ profile.dietaryPreference }}
+              </v-chip>
+            </div>
+
+            <v-expand-transition>
+              <div v-show="profileExpanded">
+                <v-row>
+                  <v-col cols="12" sm="6">
+                    <v-text-field
+                      v-model="profile.displayName"
+                      label="Display name"
+                      prepend-inner-icon="mdi-account"
+                      variant="outlined"
+                      density="comfortable"
+                    />
+                  </v-col>
+                  <v-col cols="12" sm="6">
+                    <v-text-field
+                      v-model="profile.phone"
+                      label="Phone"
+                      prepend-inner-icon="mdi-phone"
+                      variant="outlined"
+                      density="comfortable"
+                    />
+                  </v-col>
+                  <v-col cols="12">
+                    <v-text-field
+                      v-model="profile.dietaryPreference"
+                      label="Food preferences"
+                      prepend-inner-icon="mdi-silverware-fork-knife"
+                      variant="outlined"
+                      density="comfortable"
+                    />
+                  </v-col>
+                </v-row>
+              </div>
+            </v-expand-transition>
           </v-card-text>
         </v-card>
       </v-col>
@@ -272,15 +310,18 @@ onUnmounted(() => {
 
     <v-row>
       <v-col cols="12" lg="8">
-        <v-card elevation="2" class="calendar-card mb-4">
-          <v-card-title>Party Schedule Calendar 🗓️</v-card-title>
+        <v-card elevation="2" class="mb-4">
+          <v-card-title>RSVP Snapshot</v-card-title>
           <v-card-text>
-            <FullCalendar :options="calendarOptions" />
+            <p class="mb-3">{{ confirmedCount }} of {{ invitedCount }} guests confirmed</p>
+            <div class="chart-shell">
+              <Bar :data="attendanceData" :options="attendanceOptions" />
+            </div>
           </v-card-text>
         </v-card>
 
         <v-card elevation="2" class="mb-4">
-          <v-card-title>Attendee Assignments ✅</v-card-title>
+          <v-card-title>✅ Attendee Assignments</v-card-title>
           <v-card-text>
             <v-row>
               <v-col cols="12" sm="5">
@@ -300,7 +341,7 @@ onUnmounted(() => {
                 />
               </v-col>
               <v-col cols="12" sm="2" class="d-flex align-center">
-                <v-btn color="primary" block @click="addTask">Add</v-btn>
+                <v-btn color="primary" @click="addTask">Add</v-btn>
               </v-col>
             </v-row>
 
@@ -322,20 +363,12 @@ onUnmounted(() => {
 
         <v-card elevation="2">
           <v-card-title class="d-flex align-center justify-space-between">
-            <span>Shared Spotify Playlist 🎵</span>
+            <span>🎵 Shared Spotify Playlist</span>
             <v-chip size="small" color="green" variant="tonal" prepend-icon="mdi-spotify">
               {{ spotifyReady ? 'Connected' : 'Token needed' }}
             </v-chip>
           </v-card-title>
           <v-card-text>
-            <p class="spotify-muted mb-4">
-              {{
-                spotifyReady
-                  ? 'Spotify token detected. These song requests are ready to sync with playlist actions.'
-                  : 'Add VITE_SPOTIFY_TOKEN to .env to enable authenticated playlist updates.'
-              }}
-            </p>
-
             <v-row>
               <v-col cols="12" md="4">
                 <v-text-field
@@ -362,7 +395,7 @@ onUnmounted(() => {
                 />
               </v-col>
               <v-col cols="12" md="1" class="d-flex align-center">
-                <v-btn color="primary" block icon="mdi-plus" @click="addSong" />
+                <v-btn color="primary" icon="mdi-plus" @click="addSong" />
               </v-col>
             </v-row>
 
@@ -381,7 +414,7 @@ onUnmounted(() => {
 
       <v-col cols="12" lg="4">
         <v-card elevation="2" class="mb-4">
-          <v-card-title>Notifications 🔔</v-card-title>
+          <v-card-title>🔔 Notifications</v-card-title>
           <v-list>
             <v-list-item v-for="note in notifications" :key="note.id" :prepend-icon="note.icon">
               <v-list-item-title>{{ note.text }}</v-list-item-title>
@@ -389,18 +422,15 @@ onUnmounted(() => {
           </v-list>
         </v-card>
 
-        <v-card elevation="2" class="mb-4">
-          <v-card-title>RSVP Snapshot</v-card-title>
+        <v-card elevation="2" class="calendar-card mb-4">
+          <v-card-title>🗓️ Party Schedule Calendar</v-card-title>
           <v-card-text>
-            <p class="mb-3">{{ confirmedCount }} of {{ invitedCount }} guests confirmed</p>
-            <div class="chart-shell">
-              <Bar :data="attendanceData" :options="attendanceOptions" />
-            </div>
+            <FullCalendar :options="calendarOptions" />
           </v-card-text>
         </v-card>
 
         <v-card elevation="2">
-          <v-card-title>Bring List & Supplies 🧺</v-card-title>
+          <v-card-title>🧺 Bring List & Supplies</v-card-title>
           <v-card-text>
             <v-list density="comfortable">
               <v-list-item v-for="(entry, index) in bringList" :key="entry.item + index">
