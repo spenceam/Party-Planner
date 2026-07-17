@@ -1,0 +1,72 @@
+html,
+body,
+#app {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: 'Avenir', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.dashboard-wrap {
+  width: 100%;
+}
+
+.calendar-card .fc {
+  max-width: 100%;
+}
+
+.countdown-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.countdown-value {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.countdown-label {
+  margin: 0;
+  opacity: 0.75;
+}
+
+.chart-shell {
+  height: 300px;
+  position: relative;
+}
+
+.spotify-list {
+  display: grid;
+  gap: 8px;
+}
+
+.spotify-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.spotify-muted {
+  opacity: 0.75;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+@media (max-width: 960px) {
+  .chart-shell {
+    height: 240px;
+  }
+
+  .countdown-value {
+    font-size: 1.5rem;
+  }
+}
