@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useTheme } from 'vuetify'
 import { Bar } from 'vue-chartjs'
 import {
   BarElement,
@@ -16,6 +15,7 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import SpotifyWebApi from 'spotify-web-api-js'
+import { eventDate, profile } from '../composables/usePartyState'
 
 ChartJS.register(BarElement, CategoryScale, Legend, LinearScale, Title, Tooltip)
 
@@ -33,17 +33,8 @@ interface PlaylistSong {
   addedBy: string
 }
 
-const theme = useTheme()
-const isDarkMode = computed({
-  get: () => theme.global.current.value.dark,
-  set: (value: boolean) => {
-    theme.global.name.value = value ? 'dark' : 'light'
-  },
-})
-
 const spotifyApi = new SpotifyWebApi()
 const spotifyReady = ref(false)
-const profileExpanded = ref(false)
 const songTitle = ref('')
 const songArtist = ref('')
 const songAddedBy = ref('Amanda')
@@ -81,7 +72,6 @@ const attendanceOptions = {
   },
 }
 
-const eventDate = ref(new Date('2026-10-24T19:00:00'))
 const now = ref(new Date())
 let timerId: number | undefined
 
@@ -100,12 +90,6 @@ const notifications = ref([
   { id: 2, text: 'Alex added 4 songs to the shared playlist.', icon: 'mdi-music-note-plus' },
   { id: 3, text: 'Reminder: DJ deposit is due this Friday.', icon: 'mdi-bell-ring' },
 ])
-
-const profile = ref({
-  displayName: 'Amanda Spence',
-  phone: '(555) 014-8821',
-  dietaryPreference: 'Vegetarian options first',
-})
 
 const tasks = ref<AssignmentTask[]>([
   { id: 1, title: 'Bring folding table', assignee: 'Riley', done: true },
@@ -200,7 +184,7 @@ onUnmounted(() => {
     <v-row class="mb-2" align="stretch">
       <v-col cols="12" md="5">
         <v-card elevation="2" rounded="lg" class="h-100 gradient-surface">
-          <v-card-title class="d-flex align-center justify-space-between">
+          <v-card-title class="d-flex flex-wrap align-center justify-space-between ga-2">
             <span>⏳ Countdown</span>
             <v-chip size="small" color="primary" variant="tonal">Party Night</v-chip>
           </v-card-title>
@@ -225,7 +209,7 @@ onUnmounted(() => {
 
       <v-col cols="12" md="7">
         <v-card elevation="2" class="h-100">
-          <v-card-title class="d-flex align-center justify-space-between">
+          <v-card-title class="d-flex flex-wrap align-center justify-space-between ga-3">
             <div class="d-flex align-center ga-3">
               <v-avatar color="secondary" size="44">
                 <v-icon icon="mdi-account" />
@@ -235,26 +219,17 @@ onUnmounted(() => {
                 <p class="spotify-muted">Profile and preferences</p>
               </div>
             </div>
-            <div class="d-flex align-center ga-3">
-              <v-btn
-                variant="tonal"
-                prepend-icon="mdi-cog"
-                color="secondary"
-                @click="profileExpanded = !profileExpanded"
-              >
+            <div class="d-flex flex-wrap align-center ga-3">
+              <v-btn to="/profile" variant="tonal" prepend-icon="mdi-account-edit" color="primary">
+                Edit Profile
+              </v-btn>
+              <v-btn to="/settings" variant="tonal" prepend-icon="mdi-cog" color="secondary">
                 Settings
               </v-btn>
-              <v-switch
-                v-model="isDarkMode"
-                hide-details
-                color="primary"
-                inset
-                label="Dark mode"
-              />
             </div>
           </v-card-title>
           <v-card-text>
-            <div class="profile-summary mb-3">
+            <div class="profile-summary">
               <v-chip size="small" variant="outlined" prepend-icon="mdi-account">
                 {{ profile.displayName }}
               </v-chip>
@@ -269,40 +244,6 @@ onUnmounted(() => {
                 {{ profile.dietaryPreference }}
               </v-chip>
             </div>
-
-            <v-expand-transition>
-              <div v-show="profileExpanded">
-                <v-row>
-                  <v-col cols="12" sm="6">
-                    <v-text-field
-                      v-model="profile.displayName"
-                      label="Display name"
-                      prepend-inner-icon="mdi-account"
-                      variant="outlined"
-                      density="comfortable"
-                    />
-                  </v-col>
-                  <v-col cols="12" sm="6">
-                    <v-text-field
-                      v-model="profile.phone"
-                      label="Phone"
-                      prepend-inner-icon="mdi-phone"
-                      variant="outlined"
-                      density="comfortable"
-                    />
-                  </v-col>
-                  <v-col cols="12">
-                    <v-text-field
-                      v-model="profile.dietaryPreference"
-                      label="Food preferences"
-                      prepend-inner-icon="mdi-silverware-fork-knife"
-                      variant="outlined"
-                      density="comfortable"
-                    />
-                  </v-col>
-                </v-row>
-              </div>
-            </v-expand-transition>
           </v-card-text>
         </v-card>
       </v-col>
@@ -362,7 +303,7 @@ onUnmounted(() => {
         </v-card>
 
         <v-card elevation="2">
-          <v-card-title class="d-flex align-center justify-space-between">
+          <v-card-title class="d-flex flex-wrap align-center justify-space-between ga-2">
             <span>🎵 Shared Spotify Playlist</span>
             <v-chip size="small" color="secondary" variant="tonal" prepend-icon="mdi-spotify">
               {{ spotifyReady ? 'Connected' : 'Token needed' }}
