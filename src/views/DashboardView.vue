@@ -65,7 +65,7 @@ const attendanceData = computed(() => ({
     {
       label: 'Guests',
       data: [confirmedCount.value, maybeCount.value, declinedCount.value],
-      backgroundColor: ['#2e7d32', '#66bb6a', '#a5d6a7'],
+      backgroundColor: ['#4F46E5', '#E5A346', '#C4C4C4'],
       borderRadius: 8,
     },
   ],
@@ -199,7 +199,7 @@ onUnmounted(() => {
   <v-container fluid class="dashboard-wrap pa-4 pa-md-6">
     <v-row class="mb-2" align="stretch">
       <v-col cols="12" md="5">
-        <v-card elevation="2" class="h-100">
+        <v-card elevation="2" rounded="lg" class="h-100 gradient-surface">
           <v-card-title class="d-flex align-center justify-space-between">
             <span>⏳ Countdown</span>
             <v-chip size="small" color="primary" variant="tonal">Party Night</v-chip>
@@ -348,7 +348,7 @@ onUnmounted(() => {
             <v-list lines="two">
               <v-list-item v-for="task in tasks" :key="task.id">
                 <template #prepend>
-                  <v-checkbox-btn v-model="task.done" color="success" />
+                  <v-checkbox-btn v-model="task.done" color="primary" />
                 </template>
                 <v-list-item-title :class="{ 'text-decoration-line-through': task.done }">
                   {{ task.title }}
@@ -364,7 +364,7 @@ onUnmounted(() => {
         <v-card elevation="2">
           <v-card-title class="d-flex align-center justify-space-between">
             <span>🎵 Shared Spotify Playlist</span>
-            <v-chip size="small" color="green" variant="tonal" prepend-icon="mdi-spotify">
+            <v-chip size="small" color="secondary" variant="tonal" prepend-icon="mdi-spotify">
               {{ spotifyReady ? 'Connected' : 'Token needed' }}
             </v-chip>
           </v-card-title>
