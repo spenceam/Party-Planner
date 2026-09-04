@@ -1,4 +1,4 @@
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 
 export interface HostProfile {
   displayName: string
@@ -20,6 +20,21 @@ export const profile = reactive<HostProfile>({
 })
 
 export const eventDate = ref(new Date('2026-10-24T19:00:00'))
+
+// Bridges the Date used for the countdown with an <input type="datetime-local"> string.
+export const eventDateInput = computed({
+  get: () => {
+    const date = eventDate.value
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+  },
+  set: (value: string) => {
+    const parsed = new Date(value)
+    if (!Number.isNaN(parsed.getTime())) {
+      eventDate.value = parsed
+    }
+  },
+})
 
 export const notificationPreferences = reactive<NotificationPreferences>({
   rsvpUpdates: true,

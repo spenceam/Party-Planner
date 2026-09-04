@@ -15,7 +15,7 @@ import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
-import { eventDate, profile } from '../composables/usePartyState'
+import { eventDate, eventDateInput, profile } from '../composables/usePartyState'
 import { isSpotifyConfigured, searchAndAddTrack } from '../services/spotify'
 
 ChartJS.register(BarElement, CategoryScale, Legend, LinearScale, Title, Tooltip)
@@ -107,6 +107,8 @@ const taskError = ref('')
 
 const canAddTask = computed(() => Boolean(newTaskTitle.value.trim() && newTaskAssignee.value.trim()))
 const canAddSong = computed(() => Boolean(songTitle.value.trim() && songArtist.value.trim()) && !addingSong.value)
+
+const editingEventDate = ref(false)
 
 const bringList = ref([
   { item: 'Soda pack', person: 'Jordan' },
@@ -221,7 +223,16 @@ onUnmounted(() => {
         <v-card elevation="2" rounded="lg" class="h-100 gradient-surface">
           <v-card-title class="d-flex flex-wrap align-center justify-space-between ga-2">
             <span>⏳ Countdown</span>
-            <v-chip size="small" color="primary" variant="tonal">Party Night</v-chip>
+            <div class="d-flex align-center ga-2">
+              <v-chip size="small" color="primary" variant="tonal">Party Night</v-chip>
+              <v-btn
+                icon="mdi-pencil"
+                variant="text"
+                size="small"
+                aria-label="Edit event date"
+                @click="editingEventDate = !editingEventDate"
+              />
+            </div>
           </v-card-title>
           <v-card-text>
             <div class="countdown-grid">
@@ -238,6 +249,19 @@ onUnmounted(() => {
                 <p class="countdown-label">Days</p>
               </div>
             </div>
+
+            <v-expand-transition>
+              <v-text-field
+                v-if="editingEventDate"
+                v-model="eventDateInput"
+                type="datetime-local"
+                label="Event date & time"
+                prepend-inner-icon="mdi-calendar-clock"
+                variant="outlined"
+                density="comfortable"
+                class="mt-4"
+              />
+            </v-expand-transition>
           </v-card-text>
         </v-card>
       </v-col>
@@ -449,7 +473,7 @@ onUnmounted(() => {
     </v-row>
 
     <v-row>
-      <v-col cols="12">
+      <v-col cols="12" lg="8">
         <v-card elevation="2" class="calendar-card">
           <v-card-title>🗓️ Party Schedule Calendar</v-card-title>
           <v-card-text>

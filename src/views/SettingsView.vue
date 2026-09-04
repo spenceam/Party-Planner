@@ -1,21 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { eventDate, notificationPreferences } from '../composables/usePartyState'
-
-// Bridges the Date used for the countdown with an <input type="datetime-local"> string.
-const eventDateInput = computed({
-  get: () => {
-    const date = eventDate.value
-    const pad = (n: number) => String(n).padStart(2, '0')
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
-  },
-  set: (value: string) => {
-    const parsed = new Date(value)
-    if (!Number.isNaN(parsed.getTime())) {
-      eventDate.value = parsed
-    }
-  },
-})
+import { eventDateInput, notificationPreferences } from '../composables/usePartyState'
 </script>
 
 <template>
