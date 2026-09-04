@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useDisplay } from 'vuetify'
 import { Bar } from 'vue-chartjs'
 import {
   BarElement,
@@ -14,8 +15,8 @@ import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
-import SpotifyWebApi from 'spotify-web-api-js'
 import { eventDate, profile } from '../composables/usePartyState'
+import { isSpotifyConfigured, searchAndAddTrack } from '../services/spotify'
 
 ChartJS.register(BarElement, CategoryScale, Legend, LinearScale, Title, Tooltip)
 
@@ -33,11 +34,14 @@ interface PlaylistSong {
   addedBy: string
 }
 
-const spotifyApi = new SpotifyWebApi()
-const spotifyReady = ref(false)
+const { mobile } = useDisplay()
+
+const spotifyReady = isSpotifyConfigured()
 const songTitle = ref('')
 const songArtist = ref('')
 const songAddedBy = ref('Amanda')
+const addingSong = ref(false)
+const songError = ref('')
 
 const songs = ref<PlaylistSong[]>([
   { id: 1, title: 'Levitating', artist: 'Dua Lipa', addedBy: 'Riley' },
@@ -99,6 +103,10 @@ const tasks = ref<AssignmentTask[]>([
 
 const newTaskTitle = ref('')
 const newTaskAssignee = ref('')
+const taskError = ref('')
+
+const canAddTask = computed(() => Boolean(newTaskTitle.value.trim() && newTaskAssignee.value.trim()))
+const canAddSong = computed(() => Boolean(songTitle.value.trim() && songArtist.value.trim()) && !addingSong.value)
 
 const bringList = ref([
   { item: 'Soda pack', person: 'Jordan' },
@@ -106,29 +114,31 @@ const bringList = ref([
   { item: 'Board games', person: 'Evan' },
 ])
 
-const calendarOptions = {
+const calendarOptions = computed(() => ({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
   initialView: 'dayGridMonth',
-  headerToolbar: {
-    left: 'prev,next today',
-    center: 'title',
-    right: 'dayGridMonth,timeGridWeek',
-  },
+  height: 'auto',
+  dayMaxEventRows: mobile.value ? 1 : 3,
+  headerToolbar: mobile.value
+    ? { left: 'prev,next', center: 'title', right: 'today' }
+    : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' },
   events: [
     { title: 'Finalize guest list', date: '2026-09-01' },
     { title: 'Costco run', date: '2026-09-20' },
     { title: 'Decor prep night', date: '2026-10-10' },
     { title: 'Party day', date: '2026-10-24' },
   ],
-}
+}))
 
 function addTask() {
   const title = newTaskTitle.value.trim()
   const assignee = newTaskAssignee.value.trim()
   if (!title || !assignee) {
+    taskError.value = 'Enter a task and who it is assigned to.'
     return
   }
 
+  taskError.value = ''
   tasks.value.unshift({
     id: Date.now(),
     title,
@@ -140,12 +150,39 @@ function addTask() {
   newTaskAssignee.value = ''
 }
 
-function addSong() {
+function removeTask(id: number) {
+  tasks.value = tasks.value.filter((task) => task.id !== id)
+}
+
+async function addSong() {
   const title = songTitle.value.trim()
   const artist = songArtist.value.trim()
   const addedBy = songAddedBy.value.trim() || 'Guest'
 
   if (!title || !artist) {
+    songError.value = 'Enter a song title and artist.'
+    return
+  }
+
+  songError.value = ''
+
+  if (spotifyReady) {
+    addingSong.value = true
+    try {
+      const track = await searchAndAddTrack(`${title} ${artist}`)
+      songs.value.unshift({
+        id: Date.now(),
+        title: track.name,
+        artist: track.artists,
+        addedBy,
+      })
+      songTitle.value = ''
+      songArtist.value = ''
+    } catch (err) {
+      songError.value = err instanceof Error ? err.message : 'Could not add that song to Spotify.'
+    } finally {
+      addingSong.value = false
+    }
     return
   }
 
@@ -160,13 +197,11 @@ function addSong() {
   songArtist.value = ''
 }
 
-onMounted(() => {
-  const token = import.meta.env.VITE_SPOTIFY_TOKEN as string | undefined
-  if (token) {
-    spotifyApi.setAccessToken(token)
-    spotifyReady.value = true
-  }
+function removeSong(id: number) {
+  songs.value = songs.value.filter((song) => song.id !== id)
+}
 
+onMounted(() => {
   timerId = window.setInterval(() => {
     now.value = new Date()
   }, 60000)
@@ -271,6 +306,7 @@ onUnmounted(() => {
                   label="Task"
                   variant="outlined"
                   density="comfortable"
+                  @keyup.enter="addTask"
                 />
               </v-col>
               <v-col cols="12" sm="5">
@@ -279,12 +315,15 @@ onUnmounted(() => {
                   label="Assigned to"
                   variant="outlined"
                   density="comfortable"
+                  @keyup.enter="addTask"
                 />
               </v-col>
               <v-col cols="12" sm="2" class="d-flex align-center">
-                <v-btn color="primary" @click="addTask">Add</v-btn>
+                <v-btn color="primary" :disabled="!canAddTask" @click="addTask">Add</v-btn>
               </v-col>
             </v-row>
+
+            <p v-if="taskError" class="text-error text-caption mb-2">{{ taskError }}</p>
 
             <v-list lines="two">
               <v-list-item v-for="task in tasks" :key="task.id">
@@ -297,6 +336,15 @@ onUnmounted(() => {
                 <v-list-item-subtitle>
                   Assigned to {{ task.assignee }}
                 </v-list-item-subtitle>
+                <template #append>
+                  <v-btn
+                    icon="mdi-delete-outline"
+                    variant="text"
+                    size="small"
+                    aria-label="Remove task"
+                    @click="removeTask(task.id)"
+                  />
+                </template>
               </v-list-item>
             </v-list>
           </v-card-text>
@@ -306,7 +354,7 @@ onUnmounted(() => {
           <v-card-title class="d-flex flex-wrap align-center justify-space-between ga-2">
             <span>🎵 Shared Spotify Playlist</span>
             <v-chip size="small" color="secondary" variant="tonal" prepend-icon="mdi-spotify">
-              {{ spotifyReady ? 'Connected' : 'Token needed' }}
+              {{ spotifyReady ? 'Connected' : 'Local only' }}
             </v-chip>
           </v-card-title>
           <v-card-text>
@@ -317,6 +365,7 @@ onUnmounted(() => {
                   label="Song title"
                   variant="outlined"
                   density="comfortable"
+                  @keyup.enter="addSong"
                 />
               </v-col>
               <v-col cols="12" md="4">
@@ -325,6 +374,7 @@ onUnmounted(() => {
                   label="Artist"
                   variant="outlined"
                   density="comfortable"
+                  @keyup.enter="addSong"
                 />
               </v-col>
               <v-col cols="12" md="3">
@@ -333,12 +383,24 @@ onUnmounted(() => {
                   label="Added by"
                   variant="outlined"
                   density="comfortable"
+                  @keyup.enter="addSong"
                 />
               </v-col>
               <v-col cols="12" md="1" class="d-flex align-center">
-                <v-btn color="primary" icon="mdi-plus" @click="addSong" />
+                <v-btn
+                  color="primary"
+                  icon="mdi-plus"
+                  :loading="addingSong"
+                  :disabled="!canAddSong"
+                  @click="addSong"
+                />
               </v-col>
             </v-row>
+
+            <p v-if="songError" class="text-error text-caption mb-2">{{ songError }}</p>
+            <p v-else-if="!spotifyReady" class="spotify-muted mb-2">
+              Connect Spotify in .env to sync songs to the shared playlist.
+            </p>
 
             <div class="spotify-list mt-2">
               <div v-for="song in songs" :key="song.id" class="spotify-row">
@@ -346,7 +408,16 @@ onUnmounted(() => {
                   <p class="font-weight-medium">{{ song.title }}</p>
                   <p class="spotify-muted">{{ song.artist }}</p>
                 </div>
-                <v-chip size="small" variant="outlined">{{ song.addedBy }}</v-chip>
+                <div class="d-flex align-center ga-2">
+                  <v-chip size="small" variant="outlined">{{ song.addedBy }}</v-chip>
+                  <v-btn
+                    icon="mdi-delete-outline"
+                    variant="text"
+                    size="small"
+                    aria-label="Remove song"
+                    @click="removeSong(song.id)"
+                  />
+                </div>
               </div>
             </div>
           </v-card-text>
@@ -363,13 +434,6 @@ onUnmounted(() => {
           </v-list>
         </v-card>
 
-        <v-card elevation="2" class="calendar-card mb-4">
-          <v-card-title>🗓️ Party Schedule Calendar</v-card-title>
-          <v-card-text>
-            <FullCalendar :options="calendarOptions" />
-          </v-card-text>
-        </v-card>
-
         <v-card elevation="2">
           <v-card-title>🧺 Bring List & Supplies</v-card-title>
           <v-card-text>
@@ -379,6 +443,17 @@ onUnmounted(() => {
                 <v-list-item-subtitle>{{ entry.person }}</v-list-item-subtitle>
               </v-list-item>
             </v-list>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <v-row>
+      <v-col cols="12">
+        <v-card elevation="2" class="calendar-card">
+          <v-card-title>🗓️ Party Schedule Calendar</v-card-title>
+          <v-card-text>
+            <FullCalendar :key="mobile ? 'mobile' : 'desktop'" :options="calendarOptions" />
           </v-card-text>
         </v-card>
       </v-col>

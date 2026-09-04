@@ -38,6 +38,43 @@ body {
   max-width: 100%;
 }
 
+.calendar-card .fc .fc-toolbar {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+.calendar-card .fc .fc-toolbar-title {
+  font-size: 1.1rem;
+}
+
+.calendar-card .fc .fc-button {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+}
+
+.calendar-card .fc .fc-daygrid-day-number {
+  font-size: 0.8rem;
+}
+
+.calendar-card .fc .fc-event-title {
+  font-size: 0.75rem;
+}
+
+@media (min-width: 960px) {
+  .calendar-card .fc .fc-toolbar-title {
+    font-size: 1.5rem;
+  }
+
+  .calendar-card .fc .fc-button {
+    padding: 6px 14px;
+    font-size: 0.9rem;
+  }
+
+  .calendar-card .fc .fc-event-title {
+    font-size: 0.85rem;
+  }
+}
+
 .countdown-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
