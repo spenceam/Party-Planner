@@ -23,6 +23,13 @@ body {
   background: linear-gradient(90deg, rgb(var(--v-theme-primary)), rgb(var(--v-theme-secondary))) !important;
 }
 
+/* Consistent 16px card padding across every view. */
+.v-card-title,
+.v-card-text,
+.v-card-actions {
+  padding: 16px !important;
+}
+
 .dashboard-wrap {
   width: 100%;
 }
